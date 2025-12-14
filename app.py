@@ -75,9 +75,18 @@ def login():
 def dashboard():
     return "Logged in."
 
+@app.route("/admin")
+def admin():
+    if "user_id" not in session:
+        return redirect("/login")
+
+    if session.get("role") != "admin":
+        return "Access denied", 403
+
+    return "Admin panel - sensitive data"
+
+
 if __name__ == "__main__":
     app.run(debug=True)
 
-@app.route("/admin")
-def admin():
-    return "Admin panel - sensitive data"
+

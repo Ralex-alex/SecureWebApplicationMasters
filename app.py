@@ -45,8 +45,10 @@ def login():
 
         conn = get_db_connection()
         user = conn.execute(
-            f"SELECT * FROM users WHERE username='{username}' AND password='{password}'"
-        ).fetchone()
+        "SELECT * FROM users WHERE username=? AND password=?",
+        (username, password)
+    ).fetchone()
+
         conn.close()
 
         if user:

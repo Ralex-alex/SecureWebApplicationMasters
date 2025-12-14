@@ -70,10 +70,35 @@ def login():
         </form>
     """
 
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")
 
 @app.route("/dashboard")
 def dashboard():
-    return "Logged in."
+    if "user_id" not in session:
+        return redirect("/login")
+
+    conn = get_db_connection()
+    user = conn.execute(
+        "SELECT username, role FROM users WHERE id=?",
+        (session["user_id"],)
+    ).fetchone()
+    conn.close()
+
+    return f"""
+        <h2>Dashboard</h2>
+        <p>Welcome, <strong>{user['username']}</strong></p>
+        <p>Your role: <strong>{user['role']}</strong></p>
+
+        <ul>
+            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/admin">Admin Panel</a></li>
+            <li><a href="/logout">Logout</a></li>
+        </ul>
+    """
+
 
 @app.route("/admin")
 def admin():
@@ -84,7 +109,6 @@ def admin():
         return "Access denied", 403
 
     return "Admin panel - sensitive data"
-
 
 if __name__ == "__main__":
     app.run(debug=True)

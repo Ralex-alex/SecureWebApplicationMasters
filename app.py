@@ -92,12 +92,16 @@ def dashboard():
         <p>Welcome, <strong>{user['username']}</strong></p>
         <p>Your role: <strong>{user['role']}</strong></p>
 
+        <hr>
+
         <ul>
-            <li><a href="/dashboard">Dashboard</a></li>
+            <li><a href="/notes">View Notes</a></li>
+            <li><a href="/notes/create">Create Note</a></li>
             <li><a href="/admin">Admin Panel</a></li>
             <li><a href="/logout">Logout</a></li>
         </ul>
     """
+
 
 
 @app.route("/admin")
@@ -109,6 +113,97 @@ def admin():
         return "Access denied", 403
 
     return "Admin panel - sensitive data"
+
+
+#here I will implement CRUD Functions 
+# Create Notes 
+@app.route("/notes/create", methods=["GET", "POST"])
+def create_note():
+    if "user_id" not in session:
+        return redirect("/login")
+
+    if request.method == "POST":
+        title = request.form["title"]
+        content = request.form["content"]
+
+        conn = get_db_connection()
+        conn.execute(
+            "INSERT INTO notes (title, content, user_id) VALUES (?, ?, ?)",
+            (title, content, session["user_id"])
+        )
+        conn.commit()
+        conn.close()
+
+        return redirect("/notes")
+
+    return """
+        <h2>Create Note</h2>
+        <form method="post">
+            Title:<br>
+            <input name="title"><br><br>
+            Content:<br>
+            <textarea name="content"></textarea><br><br>
+            <button type="submit">Create</button>
+        </form>
+    """
+#view notes here 
+
+@app.route("/notes")
+def view_notes():
+    if "user_id" not in session:
+        return redirect("/login")
+
+    conn = get_db_connection()
+
+    if session.get("role") == "admin":
+        notes = conn.execute(
+            "SELECT notes.id, title, content, username FROM notes JOIN users ON notes.user_id = users.id"
+        ).fetchall()
+    else:
+        notes = conn.execute(
+            "SELECT id, title, content FROM notes WHERE user_id=?",
+            (session["user_id"],)
+        ).fetchall()
+
+    conn.close()
+
+    notes_html = ""
+    for note in notes:
+        notes_html += f"""
+            <div style='border:1px solid #ccc; padding:10px; margin:10px 0;'>
+                <h3>{note['title']}</h3>
+                <p>{note['content']}</p>
+            </div>
+        """
+
+    return f"""
+    <h2>Your Notes</h2>
+
+    <a href="/notes/create">Create New Note</a> |
+    <a href="/dashboard">Back to Dashboard</a>
+    <br><br>
+
+    {notes_html}
+
+    """
+
+
+@app.route("/notes/delete/<int:note_id>")
+def delete_note(note_id):
+    if "user_id" not in session:
+        return redirect("/login")
+
+    conn = get_db_connection()
+    conn.execute(
+        "DELETE FROM notes WHERE id=?",
+        (note_id,)
+    )
+    conn.commit()
+    conn.close()
+
+    return redirect("/notes")
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)

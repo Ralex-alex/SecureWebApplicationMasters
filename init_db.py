@@ -5,11 +5,12 @@ conn = sqlite3.connect("database.db")
 conn.execute("""
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT,
-    password TEXT,
-    role TEXT
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    role TEXT NOT NULL
 )
 """)
+
 
 conn.execute("""
 CREATE TABLE notes (

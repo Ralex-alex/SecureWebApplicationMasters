@@ -33,14 +33,22 @@ def register():
         hashed_password = generate_password_hash(password)
 
         conn = get_db_connection()
-        conn.execute(
-            "INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
-            (username, hashed_password, "user")
-        )
-        conn.commit()
-        conn.close()
 
-        return redirect("/login")
+        try:
+            conn.execute(
+                "INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
+                (username, hashed_password, "user")
+            )
+            conn.commit()
+            conn.close()
+            return redirect("/login")
+
+        except sqlite3.IntegrityError:
+            conn.close()
+            return """
+                <p>Username already exists.</p>
+                <a href="/register">Try again</a>
+            """
 
     return """
         <h2>Register</h2>
@@ -51,6 +59,7 @@ def register():
         </form>
         <p>Already have an account? <a href="/login">Login here</a></p>
     """
+
 
 
 # --------------------

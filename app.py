@@ -112,7 +112,38 @@ def admin():
     if session.get("role") != "admin":
         return "Access denied", 403
 
-    return "Admin panel - sensitive data"
+    conn = get_db_connection()
+    notes = conn.execute(
+        """
+        SELECT notes.id, title, content, username
+        FROM notes
+        JOIN users ON notes.user_id = users.id
+        """
+    ).fetchall()
+    conn.close()
+
+    notes_html = ""
+    for note in notes:
+        notes_html += f"""
+            <div style="border:1px solid red; padding:10px; margin:10px 0;">
+                <p><strong>Note ID:</strong> {note['id']}</p>
+                <p><strong>User:</strong> {note['username']}</p>
+                <h4>{note['title']}</h4>
+                <p>{note['content']}</p>
+                <a href="/notes/delete/{note['id']}">Delete Note</a>
+            </div>
+        """
+
+    return f"""
+        <h2>Admin Panel</h2>
+        <p>Administrative view of all notes</p>
+
+        {notes_html}
+
+        <br>
+        <a href="/dashboard">Back to Dashboard</a>
+    """
+
 
 
 #here I will implement CRUD Functions 

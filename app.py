@@ -177,7 +177,7 @@ def create_note():
             <button type="submit">Create</button>
         </form>
     """
-#view notes here 
+#view notes func here 
 
 @app.route("/notes")
 def view_notes():
@@ -218,13 +218,28 @@ def view_notes():
 
     """
 
-
+#Delete Func
 @app.route("/notes/delete/<int:note_id>")
 def delete_note(note_id):
     if "user_id" not in session:
         return redirect("/login")
 
     conn = get_db_connection()
+
+    note = conn.execute(
+        "SELECT * FROM notes WHERE id=?",
+        (note_id,)
+    ).fetchone()
+
+    if not note:
+        conn.close()
+        return "Note not found", 404
+
+    # Ownership check + admin override
+    if note["user_id"] != session["user_id"] and session.get("role") != "admin":
+        conn.close()
+        return "Access denied", 403
+
     conn.execute(
         "DELETE FROM notes WHERE id=?",
         (note_id,)
@@ -233,8 +248,6 @@ def delete_note(note_id):
     conn.close()
 
     return redirect("/notes")
-
-
 
 if __name__ == "__main__":
     app.run(debug=True)
